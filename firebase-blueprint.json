@@ -5,37 +5,33 @@
       "description": "A school entity.",
       "type": "object",
       "properties": {
-        "name": { "type": "string", "description": "The name of the school." }
+        "name": { "type": "string", "description": "The name of the school." },
+        "address": { "type": "string", "description": "The address of the school." },
+        "phone": { "type": "string", "description": "The phone number of the school." },
+        "email": { "type": "string", "description": "The email address of the school." }
       },
       "required": ["name"]
+    },
+    "User": {
+      "title": "User",
+      "description": "A user entity (teacher, admin, etc.).",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the user." },
+        "email": { "type": "string", "description": "The email address of the user." },
+        "role": { "type": "string", "enum": ["admin", "teacher", "student", "parent"], "description": "The role of the user." },
+        "schoolId": { "type": "string", "description": "The ID of the school." }
+      },
+      "required": ["name", "email", "role"]
     },
     "Class": {
       "title": "Class",
       "description": "A class entity.",
       "type": "object",
       "properties": {
-        "name": { "type": "string", "description": "The name of the class." },
-        "schoolId": { "type": "string", "description": "The ID of the school." }
-      },
-      "required": ["name", "schoolId"]
-    },
-    "Student": {
-      "title": "Student",
-      "description": "A student entity.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string", "description": "The name of the student." },
-        "classId": { "type": "string", "description": "The ID of the class." }
-      },
-      "required": ["name", "classId"]
-    },
-    "Teacher": {
-      "title": "Teacher",
-      "description": "A teacher entity.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string", "description": "The name of the teacher." },
-        "schoolId": { "type": "string", "description": "The ID of the school." }
+        "name": { "type": "string", "description": "The name of the class (e.g., 1.a)." },
+        "schoolId": { "type": "string", "description": "The ID of the school." },
+        "teacherId": { "type": "string", "description": "The ID of the class teacher." }
       },
       "required": ["name", "schoolId"]
     },
@@ -44,9 +40,10 @@
       "description": "A subject entity.",
       "type": "object",
       "properties": {
-        "name": { "type": "string", "description": "The name of the subject." }
+        "name": { "type": "string", "description": "The name of the subject." },
+        "schoolId": { "type": "string", "description": "The ID of the school." }
       },
-      "required": ["name"]
+      "required": ["name", "schoolId"]
     },
     "Grade": {
       "title": "Grade",
@@ -55,9 +52,11 @@
       "properties": {
         "studentId": { "type": "string", "description": "The ID of the student." },
         "subjectId": { "type": "string", "description": "The ID of the subject." },
-        "grade": { "type": "number", "description": "The grade value." }
+        "grade": { "type": "number", "description": "The grade value (1-5)." },
+        "date": { "type": "string", "format": "date", "description": "The date the grade was given." },
+        "note": { "type": "string", "description": "Optional note." }
       },
-      "required": ["studentId", "subjectId", "grade"]
+      "required": ["studentId", "subjectId", "grade", "date"]
     },
     "Attendance": {
       "title": "Attendance",
@@ -66,16 +65,16 @@
       "properties": {
         "studentId": { "type": "string", "description": "The ID of the student." },
         "date": { "type": "string", "format": "date", "description": "The date of attendance." },
-        "status": { "type": "string", "enum": ["present", "absent", "late"], "description": "The attendance status." }
+        "status": { "type": "string", "enum": ["present", "absent", "late"], "description": "The attendance status." },
+        "reason": { "type": "string", "description": "Reason for absence." }
       },
       "required": ["studentId", "date", "status"]
     }
   },
   "firestore": {
     "/schools/{schoolId}": { "schema": { "$ref": "School" }, "description": "Schools collection." },
+    "/users/{userId}": { "schema": { "$ref": "User" }, "description": "Users collection." },
     "/schools/{schoolId}/classes/{classId}": { "schema": { "$ref": "Class" }, "description": "Classes collection." },
-    "/schools/{schoolId}/classes/{classId}/students/{studentId}": { "schema": { "$ref": "Student" }, "description": "Students collection." },
-    "/schools/{schoolId}/teachers/{teacherId}": { "schema": { "$ref": "Teacher" }, "description": "Teachers collection." },
     "/subjects/{subjectId}": { "schema": { "$ref": "Subject" }, "description": "Subjects collection." },
     "/grades/{gradeId}": { "schema": { "$ref": "Grade" }, "description": "Grades collection." },
     "/attendance/{attendanceId}": { "schema": { "$ref": "Attendance" }, "description": "Attendance collection." }

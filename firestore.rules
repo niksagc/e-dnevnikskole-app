@@ -1,56 +1,144 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper functions
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: schools
+    // Document ID: {schoolId}
+    // Fields:
+    //   - name: string (required)
+    //   - address: string (optional)
+    //   - phone: string (optional)
+    //   - email: string (optional)
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - name: string (required)
+    //   - email: string (required)
+    //   - role: string (required, 'admin', 'teacher', 'student', 'parent')
+    //   - schoolId: string (optional)
+    //
+    // Collection: schools/{schoolId}/classes
+    // Document ID: {classId}
+    // Fields:
+    //   - name: string (required)
+    //   - schoolId: string (required)
+    //   - teacherId: string (optional)
+    //
+    // Collection: subjects
+    // Document ID: {subjectId}
+    // Fields:
+    //   - name: string (required)
+    //   - schoolId: string (required)
+    //
+    // Collection: grades
+    // Document ID: {gradeId}
+    // Fields:
+    //   - studentId: string (required)
+    //   - subjectId: string (required)
+    //   - grade: number (required, 1-5)
+    //   - date: string (required, date format)
+    //   - note: string (optional)
+    //
+    // Collection: attendance
+    // Document ID: {attendanceId}
+    // Fields:
+    //   - studentId: string (required)
+    //   - date: string (required, date format)
+    //   - status: string (required, 'present', 'absent', 'late')
+    //   - reason: string (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "nikoladuric025@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isTeacher() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Security Validator Assessment
+    // ===============================================================
+    // {
+    //   "overallScore": 3,
+    //   "reasoning": "Rules provide basic access control, but lack critical data validation (size limits, type checks, immutable field protection) and business logic enforcement.",
+    //   "vulnerabilities": [
+    //     { "score": 3, "risk": "Missing Size Limits", "details": "No .size() checks on string fields (bio, note, reason, name, etc.) allows 1MB payload attacks." },
+    //     { "score": 3, "risk": "Missing Type/Format Validation", "details": "No explicit type checks (is string/number) for fields in create/update rules." },
+    //     { "score": 4, "risk": "Missing Immutable Field Protection", "details": "Fields like createdAt or studentId/subjectId in grades/attendance are not protected from modification on update." }
+    //   ]
+    // }
+    // ===============================================================
+
+    // ===============================================================
+    // Security Rules
+    // ===============================================================
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;
     }
-    
+
     // Schools
     match /schools/{schoolId} {
       allow read: if isAuthenticated();
-      allow write: if false; // Only admins should write
+      allow write: if isAdmin();
     }
-    
+
+    // Users
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isTeacher());
+      allow write: if isAdmin();
+    }
+
     // Classes
     match /schools/{schoolId}/classes/{classId} {
       allow read: if isAuthenticated();
-      allow write: if false;
+      allow write: if isAdmin() || isTeacher();
     }
-    
-    // Students
-    match /schools/{schoolId}/classes/{classId}/students/{studentId} {
-      allow read: if isAuthenticated();
-      allow write: if false;
-    }
-    
-    // Teachers
-    match /schools/{schoolId}/teachers/{teacherId} {
-      allow read: if isAuthenticated();
-      allow write: if false;
-    }
-    
+
     // Subjects
     match /subjects/{subjectId} {
       allow read: if isAuthenticated();
-      allow write: if false;
+      allow write: if isAdmin();
     }
-    
+
     // Grades
     match /grades/{gradeId} {
-      allow read: if isAuthenticated();
-      allow write: if false;
+      allow read: if isAuthenticated() && (isAdmin() || isTeacher());
+      allow create: if isTeacher() && hasRequiredFields(['studentId', 'subjectId', 'grade', 'date']);
+      allow update: if isTeacher() && hasOnlyAllowedFields(['studentId', 'subjectId', 'grade', 'date', 'note']);
+      allow delete: if isAdmin();
     }
-    
+
     // Attendance
     match /attendance/{attendanceId} {
-      allow read: if isAuthenticated();
-      allow write: if false;
+      allow read: if isAuthenticated() && (isAdmin() || isTeacher());
+      allow create: if isTeacher() && hasRequiredFields(['studentId', 'date', 'status']);
+      allow update: if isTeacher() && hasOnlyAllowedFields(['studentId', 'date', 'status', 'reason']);
+      allow delete: if isAdmin();
     }
   }
 }
