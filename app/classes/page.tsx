@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc } from 'firebase/firestore';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -22,22 +21,39 @@ export default function ClassManagement() {
 
   useEffect(() => {
     const fetchClasses = async () => {
-      const classesCollection = collection(db, 'classes');
-      const classesSnapshot = await getDocs(classesCollection);
-      const classesList = classesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
-      setClasses(classesList);
+      const { data: classesList, error } = await supabase
+        .from('classes')
+        .select('*');
+      
+      if (error) {
+        console.error('Error fetching classes:', error);
+        return;
+      }
+      setClasses(classesList || []);
     };
     fetchClasses();
   }, []);
 
   const handleAddClass = async () => {
-    await addDoc(collection(db, 'classes'), newClass);
+    const { error } = await supabase
+      .from('classes')
+      .insert(newClass);
+    
+    if (error) {
+      console.error('Error adding class:', error);
+      return;
+    }
     setIsOpen(false);
     // Refresh class list
-    const classesCollection = collection(db, 'classes');
-    const classesSnapshot = await getDocs(classesCollection);
-    const classesList = classesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Class));
-    setClasses(classesList);
+    const { data: classesList, error: refreshError } = await supabase
+      .from('classes')
+      .select('*');
+    
+    if (refreshError) {
+      console.error('Error refreshing classes:', refreshError);
+      return;
+    }
+    setClasses(classesList || []);
   };
 
   return (

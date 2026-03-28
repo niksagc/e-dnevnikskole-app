@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { db, auth } from '@/lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -13,16 +12,19 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     const fetchClasses = async () => {
-      if (!auth.currentUser) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
       
-      // Assuming classes have a teacherId field
-      const classesQuery = query(
-        collection(db, 'classes'),
-        where('teacherId', '==', auth.currentUser.uid)
-      );
-      const classesSnapshot = await getDocs(classesQuery);
-      const classesList = classesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setClasses(classesList);
+      const { data: classesList, error } = await supabase
+        .from('classes')
+        .select('*')
+        .eq('teacherId', user.id);
+      
+      if (error) {
+        console.error('Error fetching classes:', error);
+        return;
+      }
+      setClasses(classesList || []);
     };
     fetchClasses();
   }, []);

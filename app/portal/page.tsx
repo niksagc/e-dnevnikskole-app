@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { db, auth } from '@/lib/firebase';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -14,20 +13,32 @@ export default function StudentParentDashboard() {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!auth.currentUser) return;
-      const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        setUser(userData);
-        if (userData.role === 'parent' && userData.childIds) {
-          const childrenData = await Promise.all(
-            userData.childIds.map(async (childId: string) => {
-              const childDoc = await getDoc(doc(db, 'users', childId));
-              return { id: childId, ...childDoc.data() };
-            })
-          );
-          setChildren(childrenData);
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) return;
+
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching user:', error);
+        return;
+      }
+      
+      setUser(userData);
+      if (userData.role === 'parent' && userData.childIds) {
+        const { data: childrenData, error: childrenError } = await supabase
+          .from('users')
+          .select('*')
+          .in('id', userData.childIds);
+        
+        if (childrenError) {
+          console.error('Error fetching children:', childrenError);
+          return;
         }
+        setChildren(childrenData || []);
       }
     };
     fetchUserData();

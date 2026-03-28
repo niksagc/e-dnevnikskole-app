@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -13,23 +12,34 @@ export default function AttendancePage() {
 
   useEffect(() => {
     const fetchStudents = async () => {
-      const studentsQuery = query(
-        collection(db, 'users'),
-        where('role', '==', 'student'),
-        where('classId', '==', classId)
-      );
-      const studentsSnapshot = await getDocs(studentsQuery);
-      setStudents(studentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const { data: studentsList, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('role', 'student')
+        .eq('classId', classId);
+      
+      if (error) {
+        console.error('Error fetching students:', error);
+        return;
+      }
+      setStudents(studentsList || []);
     };
     fetchStudents();
   }, [classId]);
 
   const markAttendance = async (studentId: string, status: string) => {
-    await addDoc(collection(db, 'attendance'), {
-      studentId,
-      date: new Date().toISOString().split('T')[0],
-      status
-    });
+    const { error } = await supabase
+      .from('attendance')
+      .insert({
+        studentId,
+        date: new Date().toISOString().split('T')[0],
+        status
+      });
+
+    if (error) {
+      console.error('Error marking attendance:', error);
+      return;
+    }
   };
 
   return (

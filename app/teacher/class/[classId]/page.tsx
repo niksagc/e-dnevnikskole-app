@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/lib/supabase';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,26 +16,36 @@ export default function ClassBookPage() {
 
   useEffect(() => {
     const fetchStudents = async () => {
-      // Assuming students are linked to classes
-      const studentsQuery = query(
-        collection(db, 'users'),
-        where('role', '==', 'student'),
-        where('classId', '==', classId)
-      );
-      const studentsSnapshot = await getDocs(studentsQuery);
-      setStudents(studentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const { data: studentsList, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('role', 'student')
+        .eq('classId', classId);
+      
+      if (error) {
+        console.error('Error fetching students:', error);
+        return;
+      }
+      setStudents(studentsList || []);
     };
     fetchStudents();
   }, [classId]);
 
   const addGrade = async (studentId: string) => {
     if (!grade || !subjectId) return;
-    await addDoc(collection(db, 'grades'), {
-      studentId,
-      subjectId,
-      grade: Number(grade),
-      date: new Date().toISOString().split('T')[0]
-    });
+    const { error } = await supabase
+      .from('grades')
+      .insert({
+        studentId,
+        subjectId,
+        grade: Number(grade),
+        date: new Date().toISOString().split('T')[0]
+      });
+    
+    if (error) {
+      console.error('Error adding grade:', error);
+      return;
+    }
     setGrade('');
   };
 
@@ -44,7 +53,7 @@ export default function ClassBookPage() {
     <div className="p-8">
       <h1 className="text-3xl font-bold mb-6">Class Book</h1>
       <div className="mb-4">
-        <Select onValueChange={setSubjectId}>
+        <Select onValueChange={(value: any) => setSubjectId(value)}>
           <SelectTrigger>
             <SelectValue placeholder="Select Subject" />
           </SelectTrigger>

@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc } from 'firebase/firestore';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -22,22 +21,39 @@ export default function SchoolManagement() {
 
   useEffect(() => {
     const fetchSchools = async () => {
-      const schoolsCollection = collection(db, 'schools');
-      const schoolsSnapshot = await getDocs(schoolsCollection);
-      const schoolsList = schoolsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as School));
-      setSchools(schoolsList);
+      const { data: schoolsList, error } = await supabase
+        .from('schools')
+        .select('*');
+      
+      if (error) {
+        console.error('Error fetching schools:', error);
+        return;
+      }
+      setSchools(schoolsList || []);
     };
     fetchSchools();
   }, []);
 
   const handleAddSchool = async () => {
-    await addDoc(collection(db, 'schools'), newSchool);
+    const { error } = await supabase
+      .from('schools')
+      .insert(newSchool);
+    
+    if (error) {
+      console.error('Error adding school:', error);
+      return;
+    }
     setIsOpen(false);
     // Refresh school list
-    const schoolsCollection = collection(db, 'schools');
-    const schoolsSnapshot = await getDocs(schoolsCollection);
-    const schoolsList = schoolsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as School));
-    setSchools(schoolsList);
+    const { data: schoolsList, error: refreshError } = await supabase
+      .from('schools')
+      .select('*');
+    
+    if (refreshError) {
+      console.error('Error refreshing schools:', refreshError);
+      return;
+    }
+    setSchools(schoolsList || []);
   };
 
   return (

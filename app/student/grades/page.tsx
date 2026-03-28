@@ -1,22 +1,27 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { db, auth } from '@/lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/lib/supabase';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function StudentGradesPage() {
   const [grades, setGrades] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchGrades = async () => {
-      if (!auth.currentUser) return;
-      const gradesQuery = query(
-        collection(db, 'grades'),
-        where('studentId', '==', auth.currentUser.uid)
-      );
-      const gradesSnapshot = await getDocs(gradesQuery);
-      setGrades(gradesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: gradesList, error } = await supabase
+        .from('grades')
+        .select('*')
+        .eq('studentId', user.id);
+      
+      if (error) {
+        console.error('Error fetching grades:', error);
+        return;
+      }
+      setGrades(gradesList || []);
     };
     fetchGrades();
   }, []);

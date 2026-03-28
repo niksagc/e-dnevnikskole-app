@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc } from 'firebase/firestore';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -24,22 +23,39 @@ export default function UserManagement() {
 
   useEffect(() => {
     const fetchUsers = async () => {
-      const usersCollection = collection(db, 'users');
-      const usersSnapshot = await getDocs(usersCollection);
-      const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-      setUsers(usersList);
+      const { data: usersList, error } = await supabase
+        .from('users')
+        .select('*');
+      
+      if (error) {
+        console.error('Error fetching users:', error);
+        return;
+      }
+      setUsers(usersList || []);
     };
     fetchUsers();
   }, []);
 
   const handleAddUser = async () => {
-    await addDoc(collection(db, 'users'), newUser);
+    const { error } = await supabase
+      .from('users')
+      .insert(newUser);
+    
+    if (error) {
+      console.error('Error adding user:', error);
+      return;
+    }
     setIsOpen(false);
     // Refresh user list
-    const usersCollection = collection(db, 'users');
-    const usersSnapshot = await getDocs(usersCollection);
-    const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-    setUsers(usersList);
+    const { data: usersList, error: refreshError } = await supabase
+      .from('users')
+      .select('*');
+    
+    if (refreshError) {
+      console.error('Error refreshing users:', refreshError);
+      return;
+    }
+    setUsers(usersList || []);
   };
 
   return (
