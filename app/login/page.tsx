@@ -34,10 +34,21 @@ export default function LoginPage() {
 
       if (userDoc) {
         const role = userDoc.role;
-        if (role === 'teacher' || role === 'admin') {
-          router.push('/teacher');
-        } else {
-          router.push('/portal');
+        switch (role) {
+          case 'admin':
+            router.push('/admin');
+            break;
+          case 'teacher':
+            router.push('/teacher');
+            break;
+          case 'student':
+            router.push('/student/grades');
+            break;
+          case 'parent':
+            router.push('/parent');
+            break;
+          default:
+            router.push('/portal');
         }
       } else {
         setError('User profile not found.');
@@ -72,6 +83,15 @@ export default function LoginPage() {
             {error && <p className="text-red-500 text-sm">{error}</p>}
             <Button type="submit" className="w-full">Login</Button>
           </form>
+          <div className="mt-6 pt-4 border-t">
+            <p className="text-sm text-center mb-2 text-muted-foreground">Demo Login</p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" onClick={() => { setEmail('admin@demo.com'); setPassword('password'); }}>Admin</Button>
+              <Button variant="outline" size="sm" onClick={() => { setEmail('teacher@demo.com'); setPassword('password'); }}>Teacher</Button>
+              <Button variant="outline" size="sm" onClick={() => { setEmail('student@demo.com'); setPassword('password'); }}>Student</Button>
+              <Button variant="outline" size="sm" onClick={() => { setEmail('parent@demo.com'); setPassword('password'); }}>Parent</Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

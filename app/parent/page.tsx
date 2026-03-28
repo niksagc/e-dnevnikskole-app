@@ -3,12 +3,12 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function RootPage() {
+export default function ParentDashboard() {
   const router = useRouter();
 
   useEffect(() => {
-    router.push('/login');
+    router.push('/portal');
   }, [router]);
 
-  return <div className="p-8">Redirecting to login...</div>;
+  return <div className="p-8">Redirecting to portal...</div>;
 }
