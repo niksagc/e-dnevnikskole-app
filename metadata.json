@@ -1,0 +1,9 @@
+{
+  "name": "e-Dnevnik System",
+  "description": "An electronic gradebook and school administration system for teachers, students, and parents.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}

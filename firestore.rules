@@ -1,0 +1,56 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Schools
+    match /schools/{schoolId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only admins should write
+    }
+    
+    // Classes
+    match /schools/{schoolId}/classes/{classId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    
+    // Students
+    match /schools/{schoolId}/classes/{classId}/students/{studentId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    
+    // Teachers
+    match /schools/{schoolId}/teachers/{teacherId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    
+    // Subjects
+    match /subjects/{subjectId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    
+    // Grades
+    match /grades/{gradeId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    
+    // Attendance
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+  }
+}

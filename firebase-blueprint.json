@@ -1,0 +1,83 @@
+{
+  "entities": {
+    "School": {
+      "title": "School",
+      "description": "A school entity.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the school." }
+      },
+      "required": ["name"]
+    },
+    "Class": {
+      "title": "Class",
+      "description": "A class entity.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the class." },
+        "schoolId": { "type": "string", "description": "The ID of the school." }
+      },
+      "required": ["name", "schoolId"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "A student entity.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the student." },
+        "classId": { "type": "string", "description": "The ID of the class." }
+      },
+      "required": ["name", "classId"]
+    },
+    "Teacher": {
+      "title": "Teacher",
+      "description": "A teacher entity.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the teacher." },
+        "schoolId": { "type": "string", "description": "The ID of the school." }
+      },
+      "required": ["name", "schoolId"]
+    },
+    "Subject": {
+      "title": "Subject",
+      "description": "A subject entity.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the subject." }
+      },
+      "required": ["name"]
+    },
+    "Grade": {
+      "title": "Grade",
+      "description": "A grade entity.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "description": "The ID of the student." },
+        "subjectId": { "type": "string", "description": "The ID of the subject." },
+        "grade": { "type": "number", "description": "The grade value." }
+      },
+      "required": ["studentId", "subjectId", "grade"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "An attendance entity.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "description": "The ID of the student." },
+        "date": { "type": "string", "format": "date", "description": "The date of attendance." },
+        "status": { "type": "string", "enum": ["present", "absent", "late"], "description": "The attendance status." }
+      },
+      "required": ["studentId", "date", "status"]
+    }
+  },
+  "firestore": {
+    "/schools/{schoolId}": { "schema": { "$ref": "School" }, "description": "Schools collection." },
+    "/schools/{schoolId}/classes/{classId}": { "schema": { "$ref": "Class" }, "description": "Classes collection." },
+    "/schools/{schoolId}/classes/{classId}/students/{studentId}": { "schema": { "$ref": "Student" }, "description": "Students collection." },
+    "/schools/{schoolId}/teachers/{teacherId}": { "schema": { "$ref": "Teacher" }, "description": "Teachers collection." },
+    "/subjects/{subjectId}": { "schema": { "$ref": "Subject" }, "description": "Subjects collection." },
+    "/grades/{gradeId}": { "schema": { "$ref": "Grade" }, "description": "Grades collection." },
+    "/attendance/{attendanceId}": { "schema": { "$ref": "Attendance" }, "description": "Attendance collection." }
+  }
+}
