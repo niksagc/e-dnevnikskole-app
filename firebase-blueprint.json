@@ -20,7 +20,8 @@
         "name": { "type": "string", "description": "The name of the user." },
         "email": { "type": "string", "description": "The email address of the user." },
         "role": { "type": "string", "enum": ["admin", "teacher", "student", "parent"], "description": "The role of the user." },
-        "schoolId": { "type": "string", "description": "The ID of the school." }
+        "schoolId": { "type": "string", "description": "The ID of the school." },
+        "childIds": { "type": "array", "items": { "type": "string" }, "description": "Array of student IDs if the user is a parent." }
       },
       "required": ["name", "email", "role"]
     },
@@ -69,6 +70,43 @@
         "reason": { "type": "string", "description": "Reason for absence." }
       },
       "required": ["studentId", "date", "status"]
+    },
+    "Conduct": {
+      "title": "Conduct",
+      "description": "A conduct entity.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "description": "The ID of the student." },
+        "term": { "type": "string", "description": "The term (e.g., 1st semester)." },
+        "conductGrade": { "type": "number", "description": "The conduct grade." },
+        "pedagogicalMeasures": { "type": "string", "description": "Pedagogical measures." }
+      },
+      "required": ["studentId", "term", "conductGrade"]
+    },
+    "Certificate": {
+      "title": "Certificate",
+      "description": "A certificate entity.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "description": "The ID of the student." },
+        "type": { "type": "string", "description": "The type of certificate." },
+        "date": { "type": "string", "format": "date", "description": "The date of issuance." },
+        "status": { "type": "string", "description": "The status of the certificate." }
+      },
+      "required": ["studentId", "type", "date"]
+    },
+    "FinalProject": {
+      "title": "FinalProject",
+      "description": "A final project entity.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "description": "The ID of the student." },
+        "title": { "type": "string", "description": "The title of the project." },
+        "mentorId": { "type": "string", "description": "The ID of the mentor." },
+        "status": { "type": "string", "description": "The status of the project." },
+        "date": { "type": "string", "format": "date", "description": "The date of submission." }
+      },
+      "required": ["studentId", "title", "mentorId", "status"]
     }
   },
   "firestore": {
@@ -77,6 +115,9 @@
     "/schools/{schoolId}/classes/{classId}": { "schema": { "$ref": "Class" }, "description": "Classes collection." },
     "/subjects/{subjectId}": { "schema": { "$ref": "Subject" }, "description": "Subjects collection." },
     "/grades/{gradeId}": { "schema": { "$ref": "Grade" }, "description": "Grades collection." },
-    "/attendance/{attendanceId}": { "schema": { "$ref": "Attendance" }, "description": "Attendance collection." }
+    "/attendance/{attendanceId}": { "schema": { "$ref": "Attendance" }, "description": "Attendance collection." },
+    "/conduct/{conductId}": { "schema": { "$ref": "Conduct" }, "description": "Conduct collection." },
+    "/certificates/{certificateId}": { "schema": { "$ref": "Certificate" }, "description": "Certificates collection." },
+    "/finalProjects/{projectId}": { "schema": { "$ref": "FinalProject" }, "description": "Final projects collection." }
   }
 }

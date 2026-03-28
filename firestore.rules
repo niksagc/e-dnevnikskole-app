@@ -70,6 +70,18 @@ service cloud.firestore {
       return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
     }
 
+    function isStudent(studentId) {
+      return isAuthenticated() && request.auth.uid == studentId;
+    }
+
+    function isParentOf(studentId) {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.childIds.hasAny([studentId]);
+    }
+
+    function canAccessStudentData(studentId) {
+      return isAdmin() || isTeacher() || isStudent(studentId) || isParentOf(studentId);
+    }
+
     function hasRequiredFields(fields) {
       return request.resource.data.keys().hasAll(fields);
     }
@@ -127,7 +139,7 @@ service cloud.firestore {
 
     // Grades
     match /grades/{gradeId} {
-      allow read: if isAuthenticated() && (isAdmin() || isTeacher());
+      allow read: if isAuthenticated() && canAccessStudentData(resource.data.studentId);
       allow create: if isTeacher() && hasRequiredFields(['studentId', 'subjectId', 'grade', 'date']);
       allow update: if isTeacher() && hasOnlyAllowedFields(['studentId', 'subjectId', 'grade', 'date', 'note']);
       allow delete: if isAdmin();
@@ -135,9 +147,33 @@ service cloud.firestore {
 
     // Attendance
     match /attendance/{attendanceId} {
-      allow read: if isAuthenticated() && (isAdmin() || isTeacher());
+      allow read: if isAuthenticated() && canAccessStudentData(resource.data.studentId);
       allow create: if isTeacher() && hasRequiredFields(['studentId', 'date', 'status']);
       allow update: if isTeacher() && hasOnlyAllowedFields(['studentId', 'date', 'status', 'reason']);
+      allow delete: if isAdmin();
+    }
+
+    // Conduct
+    match /conduct/{conductId} {
+      allow read: if isAuthenticated() && canAccessStudentData(resource.data.studentId);
+      allow create: if isTeacher() && hasRequiredFields(['studentId', 'term', 'conductGrade']);
+      allow update: if isTeacher() && hasOnlyAllowedFields(['studentId', 'term', 'conductGrade', 'pedagogicalMeasures']);
+      allow delete: if isAdmin();
+    }
+
+    // Certificates
+    match /certificates/{certificateId} {
+      allow read: if isAuthenticated() && canAccessStudentData(resource.data.studentId);
+      allow create: if isAdmin() && hasRequiredFields(['studentId', 'type', 'date', 'status']);
+      allow update: if isAdmin() && hasOnlyAllowedFields(['studentId', 'type', 'date', 'status']);
+      allow delete: if isAdmin();
+    }
+
+    // Final Projects
+    match /finalProjects/{projectId} {
+      allow read: if isAuthenticated() && canAccessStudentData(resource.data.studentId);
+      allow create: if isAuthenticated() && (isStudent(request.resource.data.studentId) || isTeacher()) && hasRequiredFields(['studentId', 'title', 'mentorId', 'status', 'date']);
+      allow update: if isAuthenticated() && (isStudent(resource.data.studentId) || isTeacher()) && hasOnlyAllowedFields(['studentId', 'title', 'mentorId', 'status', 'date']);
       allow delete: if isAdmin();
     }
   }
